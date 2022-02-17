@@ -13,7 +13,7 @@ use std::thread::{self, JoinHandle};
 use crossbeam_channel::{bounded, Receiver, Sender};
 use etherparse::ReadError;
 
-pub const MAX_PACKET_SIZE: usize = 1500;
+pub const MAX_PACKET_SIZE: usize = 4096;
 
 /// AF_XDP socket
 pub struct Xsk<'a> {
@@ -135,24 +135,21 @@ impl<'a> Xsk2<'a> {
             stats: RxStats::new(),
         };
 
-        let core_ids_tx = core_affinity::get_core_ids().expect("failed to get cpu core ids");
-        let core_ids_rx = core_ids_tx.clone();
+        let core_ids = core_affinity::get_core_ids().expect("failed to get cpu core ids");
+        let core_num = queue_id as usize % core_ids.len();
+        let core_tx = core_ids[core_num].clone();
+        let core_rx = core_ids[core_num].clone();
 
         let tx_handle = thread::spawn(move || {
-            if core_ids_tx.len() >= 2 {
-                log::debug!("tx: pinning thread to core {:?}", core_ids_tx[0]);
-                core_affinity::set_for_current(core_ids_tx[0]);
-            }
+            log::debug!("tx: pinning thread to core {:?}", core_tx);
+            core_affinity::set_for_current(core_tx);
             xsk_tx.send_loop();
             xsk_tx.stats
         });
 
         let rx_handle = thread::spawn(move || {
-            if core_ids_rx.len() >= 2 {
-                log::debug!("rx: pinning thread to core {:?}", core_ids_rx[1]);
-                core_affinity::set_for_current(core_ids_rx[1]);
-            }
-
+            log::debug!("rx: pinning thread to core {:?}", core_rx);
+            core_affinity::set_for_current(core_rx);
             xsk_rx.start_recv();
             xsk_rx.stats
         });
