@@ -138,12 +138,16 @@ impl<'a> Xsk2<'a> {
         let core_ids = core_affinity::get_core_ids().expect("failed to get cpu core ids");
         let core_num = queue_id as usize % core_ids.len();
         let core_tx = core_ids[core_num].clone();
-        let core_rx = core_ids[core_num].clone();
+        let core_rx = core_affinity::CoreId {
+            id: queue_id as usize,
+        };
 
         let tx_handle = thread::spawn(move || {
+            /*
             log::debug!("tx: pinning thread to core {:?}", core_tx);
             core_affinity::set_for_current(core_tx);
             xsk_tx.send_loop();
+            */
             xsk_tx.stats
         });
 
