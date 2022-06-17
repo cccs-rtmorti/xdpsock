@@ -66,7 +66,6 @@ impl<'a> Xsk<'a> {
 
 /// AF_XDP socket new implementation
 pub struct Xsk2<'a> {
-    pub ifname: &'a str,
     pub umem: Umem<'a>,
     pub umem_config: UmemConfig,
     pub socket_config: SocketConfig,
@@ -79,7 +78,7 @@ pub struct Xsk2<'a> {
 
 impl<'a> Xsk2<'a> {
     pub fn new(
-        if_name: &'a str,
+        if_name: &str,
         queue_id: u32,
         umem_config: UmemConfig,
         socket_config: SocketConfig,
@@ -156,7 +155,6 @@ impl<'a> Xsk2<'a> {
         });
 
         Self {
-            ifname: if_name,
             umem,
             umem_config,
             socket_config,
